@@ -1,0 +1,8 @@
+[2016-03-20 17:58:57] START
+[2016-03-21 02:43:11] CREATE images.py: 0
+[2016-03-21 02:43:34] EDIT opencvcomposer/models/images.py: 4
+[2016-03-21 02:44:58] EDIT opencvcomposer/models/images.py: 0
+[2016-03-21 02:45:38] EDIT opencvcomposer/models/images.py: 0
+[2016-03-21 02:47:37] EDIT opencvcomposer/controllers/default.py: 12
+[2016-03-21 02:48:33] EDIT opencvcomposer/views/default/index.html: -12
+[2016-03-21 02:50:13] EDIT opencvcomposer/controllers/default.py: 0

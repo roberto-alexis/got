@@ -1,0 +1,228 @@
+<html>
+    <head>
+        <title>Game Of Thrones</title>
+        <link rel="stylesheet" href="{{=URL('static','css/facebook.css')}}"/>
+        <link rel="stylesheet" href="{{=URL('static','css/csphotoselector.css')}}">
+        <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+        <script src="{{=URL('static','js/csphotoselector.js')}}"></script>
+        <script src="{{=URL('static','js/SimpleAjaxUploader.min.js')}}"></script>
+    </head>
+    <body>
+        <div class="logo_container">
+            <img class="logo" src="{{=URL('static','images/2_logo_GOT.png')}}"/>
+        </div>
+
+        <div class="dialog_container">
+            <div class="dialog">
+                <div id="page-1" class="page" style="display: block;">
+                    <div class="start_images">
+                        <img class="start_image" src="{{=URL('static','images/4_Profile_1.jpg')}}"/>
+                        <img class="start_image" src="{{=URL('static','images/4_Profile_2.jpg')}}"/>
+                    </div>
+                    <p id="welcome"/>
+                </div>
+                <div id="page-2" class="page" style="display: none;">
+                    <h2 id="#upload_status">Select a face picture</h2>
+                    <div class="pick_container">
+                        <div id="drop_image">
+                            <div id="drop_image_content">
+                                Drop a file here<br/>
+                                or<br/>
+                                <button type="button">Click to upload</button>
+                            </div>
+                        </div>
+                        <br/>
+                        <p>Upload from your computer</p>
+                    </div>
+                    <div class="pick_container">
+                        <img class="pick_image" id="select_image" src="{{=URL('static','images/5_Gallery.png')}}"></img>
+                        <br/>
+                        <p>Or from your Facebook</p>
+                    </div>
+                </div>
+                <div id="page-3" class="page" style="display: none;">
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Markup for Carson Shold's Photo Selector -->
+        <div id="CSPhotoSelector" style="display: none;">
+          <div class="CSPhotoSelector_dialog">
+            <a href="#" id="CSPhotoSelector_buttonClose">x</a>
+            <div class="CSPhotoSelector_form">
+              <div class="CSPhotoSelector_header">
+                <p>Choose from Photos</p>
+              </div>
+
+              <div class="CSPhotoSelector_content CSAlbumSelector_wrapper">
+                <p>Browse your albums until you find a picture you want to use</p>
+                <div class="CSPhotoSelector_searchContainer CSPhotoSelector_clearfix">
+                  <div class="CSPhotoSelector_selectedCountContainer">Select an album</div>
+                </div>
+                <div class="CSPhotoSelector_photosContainer CSAlbum_container"></div>
+              </div>
+
+              <div class="CSPhotoSelector_content CSPhotoSelector_wrapper">
+                <p>Select a new photo</p>
+                <div class="CSPhotoSelector_searchContainer CSPhotoSelector_clearfix">
+                  <div class="CSPhotoSelector_selectedCountContainer"><span class="CSPhotoSelector_selectedPhotoCount">0</span> / <span class="CSPhotoSelector_selectedPhotoCountMax">0</span> photos selected</div>
+                  <a href="#" id="CSPhotoSelector_backToAlbums">Back to albums</a>
+                </div>
+                <div class="CSPhotoSelector_photosContainer CSPhoto_container"></div>
+              </div>
+
+              <div id="CSPhotoSelector_loader"></div>
+
+
+              <div class="CSPhotoSelector_footer CSPhotoSelector_clearfix">
+                <a href="#" id="CSPhotoSelector_pagePrev" class="CSPhotoSelector_disabled">Previous</a>
+                <a href="#" id="CSPhotoSelector_pageNext">Next</a>
+                <div class="CSPhotoSelector_pageNumberContainer">
+                  Page <span id="CSPhotoSelector_pageNumber">1</span> / <span id="CSPhotoSelector_pageNumberTotal">1</span>
+                </div>
+                <a href="#" id="CSPhotoSelector_buttonOK">OK</a>
+                <a href="#" id="CSPhotoSelector_buttonCancel">Cancel</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+            //-------------------------------------------
+            // FB API initialization
+            //-------------------------------------------
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId      : '252523091747701',
+                    xfbml      : true,
+                    version    : 'v2.5'
+                });
+
+                function onLogin(response) {
+                    if (response.status == 'connected') {
+                        FB.api('/me?fields=first_name', function(data) {
+                            var welcomeBlock = document.getElementById('welcome');
+                            welcomeBlock.innerHTML = data.first_name + ', set your own Game Of Thrones profile picture.<br/>Click anywhere to continue.';
+                        });
+                    }
+                }
+
+                FB.getLoginStatus(function(response) {
+                    // Check login status on load, and if the user is
+                    // already logged in, go directly to the welcome message.
+                    if (response.status == 'connected') {
+                        onLogin(response);
+                    } else {
+                        // Otherwise, show Login dialog first.
+                        FB.login(function(response) {
+                            onLogin(response);
+                        }, {scope: 'user_friends, user_photos, email'});
+                    }
+                });
+            };
+
+            (function(d, s, id){
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) {return;}
+                js = d.createElement(s); js.id = id;
+                js.src = "//connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+
+            //-------------------------------------------
+            // FB Photo selection initialization code
+            //-------------------------------------------
+            var fbphotoSelect = function(id) {
+                var buttonOK = $('#CSPhotoSelector_buttonOK');
+
+        		// if no user/friend id is sent, default to current user
+        		if (!id) id = 'me';
+
+                callbackAlbumSelected = function(albumId) {
+        			var album = CSPhotoSelector.getAlbumById(albumId);
+        			selector.showPhotoSelector(null, album.id);
+        		};
+
+        		callbackPhotoSelected = function(photoId) {
+        			buttonOK.show();
+        		};
+
+        		callbackPhotoUnselected = function(photoId) {
+        			buttonOK.hide();
+        		};
+
+        		callbackSubmit = function(photoId) {
+        			var photo = CSPhotoSelector.getPhotoById(photoId);
+        			console.log('Selected photo id: ' + photo.id + ', url: ' + photo.source);
+        		};
+
+
+        		// Initialise the Photo Selector with options that will apply to all instances
+        		CSPhotoSelector.init();
+
+        		// Create Photo Selector instances
+        		selector = CSPhotoSelector.newInstance({
+        		    callbackAlbumSelected   : callbackAlbumSelected,
+        			callbackPhotoSelected	: callbackPhotoSelected,
+        			callbackPhotoUnselected	: callbackPhotoUnselected,
+        			callbackSubmit			: callbackSubmit,
+        			maxSelection			: 1,
+        			albumsPerPage			: 6,
+        			photosPerPage			: 200,
+        			autoDeselection			: true
+        		});
+
+        		// reset and show album selector
+        		selector.reset();
+        		selector.showAlbumSelector(id);
+        	}
+
+            //-------------------------------------------
+            // File upload
+            //-------------------------------------------
+            var uploader = new ss.SimpleUpload({
+                button: $("#drop_image"),
+                dropzone: $("#drop_image"),
+                url: 'uploadHandler.php', // server side handler
+                name: 'uploadfile', // upload parameter name
+                responseType: 'json',
+                allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
+                maxSize: 12000, // kilobytes
+                hoverClass: 'ui-state-hover',
+                focusClass: 'ui-state-focus',
+                disabledClass: 'ui-state-disabled',
+                onSubmit: function(filename, extension) {
+                    $("#upload_status")
+                        .text("Uploading '" + filename + "' ...")
+                        .css('color', 'white')
+                },
+                onComplete: function(filename, response) {
+                    if (!response) {
+                        $("#upload_status")
+                            .text("Something went wrong trying to upload '" + filename + "'.")
+                            .css('color', 'red')
+                        return false;
+                    }
+                    $("#upload_status")
+                        .text("Processing '" + filename + "' ...")
+                        .css('color', 'white')
+                    // do something with response...
+                }
+            });
+
+            //-------------------------------------------
+            // App navigation
+            //-------------------------------------------
+            $("#page-1").click(function(e) {
+        		e.preventDefault();
+                $("#page-1").fadeOut(100);
+                $("#page-2").fadeIn(100);
+            })
+            $("#select_image").click(function (e) {
+        		e.preventDefault();
+        		fbphotoSelect();
+        	});
+        </script>
+    </body>
+</html>

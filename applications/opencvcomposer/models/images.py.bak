@@ -1,0 +1,4 @@
+db.define_table('image',
+    Field('title'),
+    Field('content', 'upload'),
+    format = '%(title)s')

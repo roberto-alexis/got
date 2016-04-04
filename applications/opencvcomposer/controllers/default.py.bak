@@ -1,0 +1,93 @@
+import cv2
+import numpy as np
+import urllib2
+import json
+import os
+import StringIO
+from PIL import Image
+from PIL import ImageEnhance
+
+def download(): return response.download(request,db)
+def link(): return response.download(request,db,attachment=False)
+
+def index():
+	image_form = FORM(
+		INPUT(_name='image_title',_type='text'),
+		INPUT(_name='image_file',_type='file')
+		)
+
+	if image_form.accepts(request.vars,formname='image_form'):
+		image = db.image.file.store(image_form.vars.image_file.file, image_form.vars.image_file.filename)
+		id = db.image.insert(image=image,title=image_form.vars.image_title)
+
+	images = db().select(db.image.ALL)
+
+	return dict(images=images)
+
+def face_detection():
+    # Masquerade as Mozilla because some web servers may not like python bots.
+    hdr = {'User-Agent': 'Mozilla/5.0'}
+    # Set up the request
+    req = urllib2.Request(request.vars.url, headers=hdr)
+    # Module folder
+    moduledir = os.path.dirname(os.path.abspath('__file__'))
+    try:
+        # Obtain the content of the url
+        con = urllib2.urlopen( req )
+        # Read the content and convert it into an numpy array
+        im_array = np.asarray(bytearray(con.read()), dtype=np.uint8)
+        # Convert the numpy array into an image.
+        image = cv2.imdecode(im_array, cv2.IMREAD_COLOR)
+        # Convert to gray scale and equalize
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=1, tileGridSize=(8,8))
+        gray = clahe.apply(gray)
+
+        # Load the classifier
+        faceCascade = cv2.CascadeClassifier(os.path.join(moduledir, "applications", "opencvcomposer", "controllers", "haarcascade_frontalface_default.xml"))
+        # Detect faces in the image (the face must be at least %25 of the image)
+        (totalW, totalH) = image.shape[:2]
+        minSize = (int(totalW * 0.15), int(totalH * 0.15))
+        faces = faceCascade.detectMultiScale(gray, 1.3, 5, 0, minSize)
+
+        # Load the mask
+        maskPath = os.path.join(moduledir, "applications", "opencvcomposer", "controllers", "MASCARAGOT.png")
+        pilMaskImage = Image.open(maskPath)
+        (maskW, maskH) = pilMaskImage.size
+
+        # Setting the size and position of the target area
+        faceSize = (120, 150)
+        facePosition = ((maskW - faceSize[0]) / 2, (maskH - faceSize[1]) / 2)
+
+        # Verify that this image as a single face
+        if len(faces) == 1:
+            # Get the single face
+            (x, y, w, h) = faces[0]
+            extraTop = h * 0.045
+            extraBottom = h * 0.075
+            face = image[y-extraTop:y+h+extraTop+extraBottom, x:x+w]
+            face = cv2.resize(face, faceSize)
+            # Creates a blank image with the face in it
+            blankImage = np.zeros((maskH,maskW,3), np.uint8)
+            blankImage[facePosition[1]:facePosition[1] + faceSize[1], facePosition[0]:facePosition[0] + faceSize[0]] = face
+            # Converts to PIL format and pastes the mask on top
+            blankImage = cv2.cvtColor(blankImage,cv2.COLOR_BGR2RGB)
+            pilBlankImage = Image.fromarray(blankImage)
+            converter = ImageEnhance.Color(pilBlankImage)
+            pilBlankImage = converter.enhance(0.2)
+            pilBlankImage.paste(pilMaskImage, (0, 0), pilMaskImage)
+            pilBlankImage.save('image.png')
+        else:
+            # Draw a rectangle around the faces
+            output = gray.copy()
+            for (x, y, w, h) in faces:
+                cv2.rectangle(output, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.imwrite('image.png',output)
+
+        response.headers['Content-Type'] = "image/x-png"
+        response.headers['Content-disposition'] = 'attachment; filename=image.png'
+        res = response.stream(open('image.png', "rb"), chunk_size=4096)
+        return res
+
+    except urllib2.HTTPError, e:
+        return e.fp.read()

@@ -1,0 +1,73 @@
+body {
+    background-image: url('../images/1_Fondo_caras_GOT.jpg');
+    background-position: top left;
+    background-size: cover;
+    font-family: 'Goudy Old Style', Garamond, 'Big Caslon', 'Times New Roman', serif;
+    font-size: 20px;
+    color: white;
+}
+
+.logo_container {
+    text-align: center;
+}
+
+.logo {
+    height: 90px;
+}
+
+.dialog_container {
+    position: relative;
+    text-align: center;
+}
+
+.dialog {
+    background-image: url('../images/3_Fondo_negro_GOT.png');
+    background-position: top left;
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 900px;
+    height: 500px;
+    display: inline-block;
+    padding: 110px 50px 50px 50px;
+}
+
+.page {
+    position: absolute;
+    left:0;
+    right:0;
+}
+
+.start_image {
+    width: 210px;
+    height: 210px;
+    margin: 15px 15px 0px 15px;
+}
+
+.pick_image {
+    width: 150px;
+    height: 160px;
+    margin: 0px;
+}
+
+.pick_container {
+    display: inline-block;
+    padding: 0px 30px 0px 30px;
+}
+
+#drop_image {
+    display: block;
+    border-radius: 15px;
+    -moz-border-radius: 15px;
+    -webkit-border-radius: 15px;
+    border: 2px dashed #FFFFFF;
+    height: 150px;
+}
+
+#drop_image_content {
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
