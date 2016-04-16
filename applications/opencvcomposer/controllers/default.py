@@ -148,10 +148,15 @@ def _storeImage(file):
     except ValueError as err:
         return response.json({'status': 1, 'message': str(err)})
 
-# Trims the database, keeping only 1 day worth of images
+# Trims the database and removes old images, keeping only the given 
+# number of minutes worth of images
 def _pruneDatabase(minutes):
-    limit = datetime.datetime.now.minusDay(minutes)
-    db(db.image.image == filename & db.image.createat < limit).delete()
+    limit = datetime.datetime.now.minusMinutes(minutes)
+    recordSet = db(db.image.createat < limit)
+    for row in db(db.person.id > 0).select():
+        path = os.path.join(request.folder, 'uploads', row.image)
+        path.delete
+    recordSet.delete()
 
 # Converts RGB encoded images to HSV encoding
 def _rgb_to_hsv(rgb):
