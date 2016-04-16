@@ -1,4 +1,6 @@
 db.define_table('image',
-    Field('title'),
+    Field('title', required=True, notnull=True, unique=True),
     Field('image', 'upload'),
-    format = '%(title)s')
+    Field('createat', 'datetime', default=request.now),
+    format = '%(title)s'
+)

@@ -22,7 +22,7 @@
                     <p id="welcome"/>
                 </div>
                 <div id="page-2" class="page" style="display: none;">
-                    <h2 id="#upload_status">Select a face picture</h2>
+                    <h2 id="upload_status">Select a face picture</h2>
                     <div class="pick_container">
                         <div id="drop_image">
                             <div id="drop_image_content">
@@ -32,16 +32,18 @@
                             </div>
                         </div>
                         <br/>
-                        <p>Upload from your computer</p>
+                        <span>Upload from your computer</span>
                     </div>
                     <div class="pick_container">
                         <img class="pick_image" id="select_image" src="{{=URL('static','images/5_Gallery.png')}}"></img>
                         <br/>
-                        <p>Or from your Facebook</p>
+                        <span>Or from your Facebook</span>
                     </div>
                 </div>
                 <div id="page-3" class="page" style="display: none;">
-
+                    <div class="progress">
+                        <h2>Uploading the photo...</h2>
+                    </div>
                 </div>
             </div>
         </div>
@@ -184,30 +186,39 @@
             var uploader = new ss.SimpleUpload({
                 button: $("#drop_image"),
                 dropzone: $("#drop_image"),
-                url: 'uploadHandler.php', // server side handler
-                name: 'uploadfile', // upload parameter name
+                url: '/opencvcomposer/default/upload',
+                name: 'image_file', // upload parameter name
                 responseType: 'json',
+                data: {'_formname': 'image_form'},
                 allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
                 maxSize: 12000, // kilobytes
                 hoverClass: 'ui-state-hover',
                 focusClass: 'ui-state-focus',
                 disabledClass: 'ui-state-disabled',
                 onSubmit: function(filename, extension) {
-                    $("#upload_status")
-                        .text("Uploading '" + filename + "' ...")
-                        .css('color', 'white')
+                    $("#page-2").fadeOut(100);
+                    $("#page-3").fadeIn(100);
                 },
                 onComplete: function(filename, response) {
-                    if (!response) {
+                    if (!response || response.status != 0) {
+                        $("#page-3").fadeOut(100);
+                        $("#page-2").fadeIn(100);
                         $("#upload_status")
-                            .text("Something went wrong trying to upload '" + filename + "'.")
+                            .text(response.message || "Something went wrong uploading the file. Try a different one.")
                             .css('color', 'red')
                         return false;
                     }
-                    $("#upload_status")
-                        .text("Processing '" + filename + "' ...")
-                        .css('color', 'white')
+                    $("#page-3").fadeOut(100);
+                    $("#page-4").fadeIn(100);
+
                     // do something with response...
+                },
+                onError: function(filename, errorType, status, statusText, response, uploadBtn, fileSize) {
+                    $("#page-3").fadeOut(100);
+                    $("#page-2").fadeIn(100);
+                    $("#upload_status")
+                        .text("Something went wrong uploading the file. Try a different one.")
+                        .css('color', 'red')
                 }
             });
 

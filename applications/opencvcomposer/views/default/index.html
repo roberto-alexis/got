@@ -1,52 +1,354 @@
-{{extend 'base.html'}}
+<html>
+    <head>
+        <title>Game Of Thrones</title>
+        <link rel="stylesheet" href="{{=URL('static','css/facebook.css')}}"/>
+        <link rel="stylesheet" href="{{=URL('static','css/csphotoselector.css')}}">
+        <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+        <script src="{{=URL('static','js/csphotoselector.js')}}"></script>
+        <script src="{{=URL('static','js/SimpleAjaxUploader.min.js')}}"></script>
+    </head>
+    <body>
+        <div class="logo_container">
+            <img class="logo" src="{{=URL('static','images/2_logo_GOT.png')}}"/>
+        </div>
 
-<div class="panel panel-default">
-  <div class="panel-heading">Upload a photo</div>
-  <div class="panel-body">
-    <form action="" enctype="multipart/form-data" method="post" class="form-horizontal">
-    	<input name="_formname" type="hidden" value="image_form"/>
-    	<div class="form-group">
-    	    <label for="image_file" class="col-sm-2 control-label">Select a file:</label>
-    	    <div class="col-sm-10">
-        	    <input id="image_file" class="upload" name="image_file" type="file"/>
-        	</div>
-    	</div>
-    	<div class="form-group">
-    	    <label for="color_hue" class="col-sm-2 control-label">Adjust hue:</label>
-    	    <div class="col-sm-10">
-        	    <input id="color_hue" class="form-control" name="color_hue" type="text" value="" placeholder="-180 to 180 (default: 202)"/>
-        	</div>
-    	</div>
-    	<div class="form-group">
-        	<label for="color_light" class="col-sm-2 control-label">Adjust brightness:</label>
-    	    <div class="col-sm-10">
-            	<input id="color_light" class="form-control" name="color_light" type="text" value="" placeholder="0.0 to 1.0 (default: 0.97)"/>
-            </div>
-    	</div>
-    	<div class="form-group">
-        	<label for="color_sat" class="col-sm-2 control-label">Adjust saturation:</label>
-    	    <div class="col-sm-10">
-            	<input id="color_sat" class="form-control" name="color_sat" type="text" value="" placeholder="0.0 to 1.0 (default: 0.15)"/>
-            </div>
-    	</div>
-    	<input type="submit" value="Submit" class="btn btn-default">
-    </form>
-  </div>
-</div>
+        <div class="acknowledgements">
+            <p>Application developed by Roberto Perez (Developer) and Vicente Maidana (Designer) - Palo Alto, California, USA - April 2016</p>
+        </div>
 
-<ul>
-{{for image in images:}}
-	<li>
-		<a href="{{=URL(f='link', args=image.image)}}">
-			<img src="{{=URL(f='link', args=image.image)}}"/>
-			{{=image.title}}
-		</a>
-		<a href="{{=URL(f='download', args=image.image)}}">
-			[Download]
-		</a>
-		<a href="{{=URL(f='delete', args=image.image)}}">
-			[Delete]
-		</a>
-	</li>
-{{pass}}
-</ul>
+        <!-- Markup for image upload wizard -->
+        <div class="dialog_container">
+            <div class="dialog">
+                <div id="page-1" class="page" style="display: block;">
+                    <div class="start_images">
+                        <img class="start_image" src="{{=URL('static','images/4_Profile_1.jpg')}}"/>
+                        <img class="start_image" src="{{=URL('static','images/4_Profile_2.jpg')}}"/>
+                    </div>
+                    <p id="welcome"/>
+                </div>
+                <div id="page-2" class="page" style="display: none;">
+                    <h2 id="upload_status">Select a face picture</h2>
+                    <div class="pick_container">
+                        <div id="drop_image">
+                            <div id="drop_image_content">
+                                Drop a file here<br/>
+                                or<br/>
+                                <button type="button">Click to upload</button>
+                            </div>
+                        </div>
+                        <br/>
+                        <span>Upload from your computer</span>
+                    </div>
+                    <div class="pick_container">
+                        <img class="pick_image" id="select_image" src="{{=URL('static','images/5_Gallery.png')}}"></img>
+                        <br/>
+                        <span>Or from your Facebook</span>
+                    </div>
+                </div>
+                <div id="page-3" class="page" style="display: none;">
+                    <div class="progress">
+                        <h2>Uploading the photo...</h2>
+                        <img class="upload_image" src="{{=URL('static','images/9_Upload.gif')}}"></img>
+                    </div>
+                </div>
+                <div id="page-4" class="page" style="display: none;">
+                    <div class="progress">
+                        <h2 id="facebook_upload_status">Here is your image! Ready to publish?</h2>
+                        <div class="arrange-horizontally">
+                            <div id="back_to_selection_button" class="got_image_back">
+                                <div class="center-vertically">
+                                    <img class="got_image_arrows" src="{{=URL('static','images/10_Thumb_Down.png')}}"></img>
+                                    <p>Not great?<br/>No problem, click here to<br/>load another photo.</p>
+                                </div>
+                            </div>
+                            <img class="got_image" id="got_image"></img>
+                            <div id="upload_got_image" class="got_image_forward">
+                                <div class="center-vertically">
+                                    <img class="got_image_arrows" src="{{=URL('static','images/11_Thumb_Up.png')}}"></img>
+                                    <h3>Yes!</h3>
+                                    <span>Let's publish it!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="page-5" class="page" style="display: none;">
+                    <div class="progress">
+                        <h2>Publishing...</h2>
+                        <img class="upload_image" src="{{=URL('static','images/9_Upload.gif')}}"></img>
+                    </div>
+                </div>
+                <div id="page-6" class="page" style="display: none;">
+                    <h2>Thanks for being a Game of Thrones fan!</h2>
+                    <p>Please share with your friends</p>
+                    <br/>
+                    <h2>Developed by</h2>
+                    <p>Roberto Perez (Developer)</p>
+                    <p>Vicente Maidana (Designer)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Markup for Carson Shold's Photo Selector -->
+        <div id="CSPhotoSelector" style="display: none;">
+          <div class="CSPhotoSelector_dialog">
+            <a href="#" id="CSPhotoSelector_buttonClose">x</a>
+            <div class="CSPhotoSelector_form">
+              <div class="CSPhotoSelector_header">
+                <p>Choose from Photos</p>
+              </div>
+
+              <div class="CSPhotoSelector_content CSAlbumSelector_wrapper">
+                <p>Browse your albums until you find a picture you want to use</p>
+                <div class="CSPhotoSelector_searchContainer CSPhotoSelector_clearfix">
+                  <div class="CSPhotoSelector_selectedCountContainer">Select an album</div>
+                </div>
+                <div class="CSPhotoSelector_photosContainer CSAlbum_container"></div>
+              </div>
+
+              <div class="CSPhotoSelector_content CSPhotoSelector_wrapper">
+                <p>Select a new photo</p>
+                <div class="CSPhotoSelector_searchContainer CSPhotoSelector_clearfix">
+                  <div class="CSPhotoSelector_selectedCountContainer"><span class="CSPhotoSelector_selectedPhotoCount">0</span> / <span class="CSPhotoSelector_selectedPhotoCountMax">0</span> photos selected</div>
+                  <a href="#" id="CSPhotoSelector_backToAlbums">Back to albums</a>
+                </div>
+                <div class="CSPhotoSelector_photosContainer CSPhoto_container"></div>
+              </div>
+
+              <div id="CSPhotoSelector_loader"></div>
+
+
+              <div class="CSPhotoSelector_footer CSPhotoSelector_clearfix">
+                <a href="#" id="CSPhotoSelector_pagePrev" class="CSPhotoSelector_disabled">Previous</a>
+                <a href="#" id="CSPhotoSelector_pageNext">Next</a>
+                <div class="CSPhotoSelector_pageNumberContainer">
+                  Page <span id="CSPhotoSelector_pageNumber">1</span> / <span id="CSPhotoSelector_pageNumberTotal">1</span>
+                </div>
+                <a href="#" id="CSPhotoSelector_buttonOK">OK</a>
+                <a href="#" id="CSPhotoSelector_buttonCancel">Cancel</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+            //-------------------------------------------
+            // FB API initialization
+            //-------------------------------------------
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId      : '252523091747701',
+                    xfbml      : true,
+                    version    : 'v2.5'
+                });
+
+                function onLogin(response) {
+                    if (response && response.status == 'connected') {
+                        FB.api('/me?fields=first_name', function(data) {
+                            $('#welcome').html(data.first_name + ', set your own Game Of Thrones profile picture.<br/>Click anywhere to continue.');
+                        });
+                        $("#page-1").click(function() {
+                            moveToSelection("Select a face picture", false);
+                        })
+                    } else {
+                        $('#welcome').html(
+                            '<b style="color:red;">Unable to connect</b><br/>' +
+                            'In order to create your picture, we need to access your Facebook profile.<br/>' +
+                            'We are not going to use your private information in anyway.<br/>' +
+                            'Click above to try again.'
+                        );
+                        $("#page-1").click(function() {
+                            // Retry
+                            FB.login(function(response) {
+                                onLogin(response);
+                            }, {scope: 'user_friends, user_photos, email, publish_actions'});
+                        })
+                    }
+                }
+
+                FB.getLoginStatus(function(response) {
+                    // Check login status on load, and if the user is
+                    // already logged in, go directly to the welcome message.
+                    if (response.status == 'connected') {
+                        $('#welcome').text('Authorizing...');
+                        onLogin(response);
+                    } else {
+                        // Otherwise, show Login dialog first.
+                        FB.login(function(response) {
+                            onLogin(response);
+                        }, {scope: 'user_friends, user_photos, email, publish_actions'});
+                    }
+                });
+            };
+
+            (function(d, s, id){
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) {return;}
+                js = d.createElement(s); js.id = id;
+                js.src = "//connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+
+            //-------------------------------------------
+            // Transition to page
+            //-------------------------------------------
+            var moveToPage = function(pageId) {
+                $(".page").fadeOut(100);
+                $(pageId).fadeIn(100);
+            };
+
+            //-------------------------------------------
+            // Move to selection
+            //-------------------------------------------
+            var moveToSelection = function(message, isError) {
+                $("#upload_status")
+                    .text(message)
+                    .css('color', isError ? 'red' : 'white')
+                moveToPage("#page-2");
+            };
+
+            //-------------------------------------------
+            // Complete upload to FB
+            //-------------------------------------------
+            var finishUpload = function(fileId) {
+                var imagePath = location.origin + "/opencvcomposer/default/image/" + fileId;
+                $("#got_image").attr("src", imagePath);
+                $("#upload_got_image").click(function(e) {
+                    moveToPage("#page-5");
+                    FB.api('/me/photos',
+                        'POST',
+                        {
+                            "url": imagePath,
+                            "no_story": true
+                        },
+                        function (response) {
+                            if (!response || response.error) {
+                                $("#facebook_upload_status")
+                                    .text((response.error || "Unable to upload your picture to Facebook.") + " Please try again.")
+                                    .css('color', 'red');
+                                moveToPage("#page-4");
+                                return;
+                            }
+                            FB.api('/me/feed',
+                                'POST',
+                                {
+                                    "caption": "'Winter is coming' profile photo",
+                                    "link": "https://apps.facebook.com/gotiscoming",
+                                    "description": "Winter is coming! Create your own 'Game of Thrones' picture with this app.",
+                                    "message": "New 'Game of Thrones' picture.",
+                                    "name": "Create your own GoT profile picture.",
+                                    "picture": imagePath,
+                                    "type": "photo"
+                                },
+                                function () {
+                                    if (!response || response.error) {
+                                        $("#facebook_upload_status")
+                                            .text((response.error || "Unable publish to Facebook.") + " Please try again.")
+                                            .css('color', 'red');
+                                        moveToPage("#page-4");
+                                        return;
+                                    }
+                                    // Opening the profile dialog in a new window
+                                    var fbid = response.id;
+                                    var url = "https://m.facebook.com/photo.php?fbid=" + fbid + "&prof=1";
+                                    moveToPage("#page-6");
+                                    window.open(url, '_blank');
+                                }
+                            );
+                        }
+                    );
+                })
+                moveToPage("#page-4");
+            };
+
+            //-------------------------------------------
+            // FB Photo selection initialization code
+            //-------------------------------------------
+            var fbphotoSelect = function(id) {
+                var buttonOK = $('#CSPhotoSelector_buttonOK');
+
+        		// if no user/friend id is sent, default to current user
+        		if (!id) id = 'me';
+
+        		// Initialise the Photo Selector with options that will apply to all instances
+        		CSPhotoSelector.init();
+
+                // Function used to upload from Facebook
+                var uploadFromFacebook = function(photoUrl) {
+                    $.ajax({
+                        url: "/opencvcomposer/default/loadFromUrl?url=" + photoUrl,
+                        success: function(response, status) {
+                            alert("Response: " + response + " Status: " + status);
+                            //finishUpload(response.file_id);
+                        },
+                        dataType: "json"
+                    });
+                };
+
+        		// Create Photo Selector instances
+        		selector = CSPhotoSelector.newInstance({
+        		    callbackAlbumSelected   : function(albumId) {
+            			var album = CSPhotoSelector.getAlbumById(albumId);
+            			selector.showPhotoSelector(null, album.id);
+            		},
+        			callbackPhotoSelected	: function(photoId) {
+            			var photoUrl = CSPhotoSelector.getPhotoById(photoId).source;
+            			selector.hideAlbumSelector();
+            			uploadFromFacebook(photoUrl);
+                	},
+        			maxSelection			: 1,
+        			albumsPerPage			: 6,
+        			photosPerPage			: 200,
+        			autoDeselection			: true
+        		});
+
+        		// reset and show album selector
+    		    buttonOK.hide();
+        		selector.reset();
+        		selector.showAlbumSelector(id);
+        	};
+
+            //-------------------------------------------
+            // File upload
+            //-------------------------------------------
+            var uploader = new ss.SimpleUpload({
+                button: $("#drop_image"),
+                dropzone: $("#drop_image"),
+                url: '/opencvcomposer/default/upload',
+                name: 'image_file', // upload parameter name
+                responseType: 'json',
+                data: {'_formname': 'image_form'},
+                allowedExtensions: ['jpg', 'jpeg', 'png', 'gif'],
+                maxSize: 12000, // kilobytes
+                hoverClass: 'ui-state-hover',
+                focusClass: 'ui-state-focus',
+                disabledClass: 'ui-state-disabled',
+                onSubmit: function(filename, extension) {
+                    $("#page-2").fadeOut(100);
+                    $("#page-3").fadeIn(100);
+                },
+                onComplete: function(filename, response) {
+                    if (!response || response.status != 0) {
+                        moveToSelection(response.message || "Something went wrong uploading the file. Try a different one.", true)
+                    }
+                    finishUpload(response.file_id);
+                },
+                onError: function(filename, errorType, status, statusText, response, uploadBtn, fileSize) {
+                    moveToSelection("Something went wrong uploading the file. Try a different one.", true)
+                }
+            });
+
+            //-------------------------------------------
+            // App navigation
+            //-------------------------------------------
+            $("#select_image").click(function (e) {
+        		e.preventDefault();
+        		fbphotoSelect();
+        	});
+        	$("#back_to_selection_button").click(function (e) {
+        	    e.preventDefault();
+                moveToSelection("Try a different photo", false);
+        	});
+        </script>
+    </body>
+</html>

@@ -1,0 +1,52 @@
+{{extend 'base.html'}}
+
+<div class="panel panel-default">
+  <div class="panel-heading">Upload a photo</div>
+  <div class="panel-body">
+    <form action="" enctype="multipart/form-data" method="post" class="form-horizontal">
+    	<input name="_formname" type="hidden" value="image_form"/>
+    	<div class="form-group">
+    	    <label for="image_file" class="col-sm-2 control-label">Select a file:</label>
+    	    <div class="col-sm-10">
+        	    <input id="image_file" class="upload" name="image_file" type="file"/>
+        	</div>
+    	</div>
+    	<div class="form-group">
+    	    <label for="color_hue" class="col-sm-2 control-label">Adjust hue:</label>
+    	    <div class="col-sm-10">
+        	    <input id="color_hue" class="form-control" name="color_hue" type="text" value="" placeholder="-180 to 180 (default: 202)"/>
+        	</div>
+    	</div>
+    	<div class="form-group">
+        	<label for="color_light" class="col-sm-2 control-label">Adjust brightness:</label>
+    	    <div class="col-sm-10">
+            	<input id="color_light" class="form-control" name="color_light" type="text" value="" placeholder="0.0 to 1.0 (default: 0.97)"/>
+            </div>
+    	</div>
+    	<div class="form-group">
+        	<label for="color_sat" class="col-sm-2 control-label">Adjust saturation:</label>
+    	    <div class="col-sm-10">
+            	<input id="color_sat" class="form-control" name="color_sat" type="text" value="" placeholder="0.0 to 1.0 (default: 0.15)"/>
+            </div>
+    	</div>
+    	<input type="submit" value="Submit" class="btn btn-default">
+    </form>
+  </div>
+</div>
+
+<ul>
+{{for image in images:}}
+	<li>
+		<a href="{{=URL(f='link', args=image.image)}}">
+			<img src="{{=URL(f='link', args=image.image)}}"/>
+			{{=image.title}}
+		</a>
+		<a href="{{=URL(f='download', args=image.image)}}">
+			[Download]
+		</a>
+		<a href="{{=URL(f='delete', args=image.image)}}">
+			[Delete]
+		</a>
+	</li>
+{{pass}}
+</ul>

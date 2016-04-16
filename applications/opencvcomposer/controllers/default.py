@@ -4,6 +4,7 @@ import urllib2
 import json
 import os
 import StringIO
+import uuid
 from PIL import Image
 from PIL import ImageEnhance
 
@@ -18,10 +19,50 @@ def delete():
     db(db.image.image==filename).delete()
     redirect(URL('index'))
 
-def facebook():
+def index():
     return dict()
 
-def index():
+def image():
+    fileId = request.args(0)
+    fileName = db(db.image.title==fileId).select().first().image
+    response.headers['Content-Type'] = "image/x-jpg"
+    response.headers['Content-disposition'] = 'attachment; filename=image.jpg'
+    path = os.path.join(request.folder, 'uploads', fileName)
+    res = response.stream(open(path, "rb"), chunk_size=4096)
+    return res
+
+def storeImage(file):
+    try:
+        fileId = str(uuid.uuid5(uuid.NAMESPACE_DNS, 'got06.com'))
+        filename = db.image.image.store(file, fileId + ".jpg")
+        path = os.path.join(request.folder, 'uploads', filename)
+        image = generateImage(open(path, 'rb'), 202, 0.15, 0.97, True)
+        image.save(path)
+        id = db.image.insert(image=filename,title=fileId)
+        return response.json({'status': 0, 'file_id': fileId})
+    except ValueError as err:
+        return response.json({'status': 1, 'message': str(err)})
+
+def upload():
+    image_form = FORM(
+		INPUT(_name='image_file',_type='file')
+		)
+
+    if image_form.accepts(request.vars,formname='image_form'):
+        return storeImage(image_form.vars.image_file.file)
+
+    raise HTTP(400, "Missing file parameter")
+
+def loadFromUrl():
+    try:
+        url = request.get_vars["url"];
+        file = urllib2.urlopen(url)
+        return storeImage(file)
+
+    except urllib2.HTTPError as err:
+        response.json({'status': 1, 'message': str(err)})
+
+def custom():
 	image_form = FORM(
 		INPUT(_name='image_title',_type='text'),
 		INPUT(_name='image_file',_type='file'),
@@ -36,7 +77,7 @@ def index():
 		hue = 202 if not image_form.vars.color_hue else int(image_form.vars.color_hue)
 		sat = 0.15 if not image_form.vars.color_sat else float(image_form.vars.color_sat)
 		light = 0.97 if not image_form.vars.color_light else float(image_form.vars.color_light)
-		image = generateImage(open(path, 'rb'), hue, sat, light)
+		image = generateImage(open(path, 'rb'), hue, sat, light, False)
 		image.save(path)
 		id = db.image.insert(image=filename,title=image_form.vars.image_title)
 
@@ -115,7 +156,7 @@ def hueShift(img, amount):
     rgb = hsv_to_rgb(hsv)
     return Image.fromarray(rgb, 'RGB')
 
-def generateImage(con, hue, sat, light):
+def generateImage(con, hue, sat, light, fail):
     # Module folder
     moduledir = os.path.dirname(os.path.abspath('__file__'))
     try:
@@ -136,7 +177,7 @@ def generateImage(con, hue, sat, light):
         faces = faceCascade.detectMultiScale(gray, 1.3, 5, 0, minSize)
 
         # Load the mask
-        maskPath = os.path.join(moduledir, "applications", "opencvcomposer", "controllers", "GOT06_MASCARA-v2.png")
+        maskPath = os.path.join(moduledir, "applications", "opencvcomposer", "controllers", "GOT06_MASCARA-v3.png")
         pilMaskImage = Image.open(maskPath)
         (maskW, maskH) = pilMaskImage.size
 
@@ -164,6 +205,10 @@ def generateImage(con, hue, sat, light):
             pilBlankImage.paste(pilMaskImage, (0, 0), pilMaskImage)
             return pilBlankImage
         else:
+            if len(faces) > 1 and fail:
+                raise ValueError("This picture has more than one face")
+            if fail:
+                raise ValueError("We couldn't find any faces in this picture")
             # Draw a rectangle around the faces
             output = image.copy()
             for (x, y, w, h) in faces:
@@ -172,4 +217,4 @@ def generateImage(con, hue, sat, light):
             return Image.fromarray(output)
 
     except urllib2.HTTPError, e:
-        return e.fp.read()
+        raise ValueError("Internal error processing the image")
